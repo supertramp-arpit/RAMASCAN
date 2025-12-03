@@ -10,6 +10,7 @@ from extract_biller_images import PaytmBillerImageExtractor
 from bs4 import BeautifulSoup
 
 # Sample HTML that simulates a Paytm-like electricity bill payment page
+# Note: Using placeholder URLs for demonstration purposes
 SAMPLE_HTML = """
 <!DOCTYPE html>
 <html>
@@ -21,29 +22,29 @@ SAMPLE_HTML = """
         <h2>Select Your Electricity Provider</h2>
         <div class="biller-grid">
             <div class="biller-card">
-                <img src="https://example.com/images/tata-power.png" alt="Tata Power Electricity Biller" class="biller-logo">
+                <img src="https://cdn.paytm.com/images/tata-power.png" alt="Tata Power Electricity Biller" class="biller-logo">
                 <span>Tata Power</span>
             </div>
             <div class="biller-card">
-                <img src="https://example.com/images/adani-electricity.png" alt="Adani Electricity Provider" class="operator-logo">
+                <img src="https://cdn.paytm.com/images/adani-electricity.png" alt="Adani Electricity Provider" class="operator-logo">
                 <span>Adani Electricity</span>
             </div>
             <div class="biller-card">
-                <img data-src="https://example.com/images/bses.png" alt="BSES Electricity" class="provider-logo">
+                <img data-src="https://cdn.paytm.com/images/bses.png" alt="BSES Electricity" class="provider-logo">
                 <span>BSES</span>
             </div>
             <div class="biller-card">
-                <img src="https://example.com/logos/best.jpg" alt="BEST Mumbai Electricity Operator">
+                <img src="https://cdn.paytm.com/logos/best.jpg" alt="BEST Mumbai Electricity Operator">
                 <span>BEST</span>
             </div>
             <div class="biller-card">
-                <img src="https://example.com/electricity/reliance-energy-logo.png" alt="Reliance Energy">
+                <img src="https://cdn.paytm.com/electricity/reliance-energy-logo.png" alt="Reliance Energy">
                 <span>Reliance Energy</span>
             </div>
         </div>
     </div>
     <div class="other-content">
-        <img src="https://example.com/banner.jpg" alt="Advertisement Banner">
+        <img src="https://cdn.paytm.com/banner.jpg" alt="Advertisement Banner">
     </div>
 </body>
 </html>

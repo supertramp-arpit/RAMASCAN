@@ -131,6 +131,7 @@ class PaytmBillerImageExtractor:
             # Pre-compute the combined search string with separators to avoid false matches
             alt = img.get('alt', '').lower()
             class_name = ' '.join(img.get('class', [])).lower()
+            # src is guaranteed to be non-None at this point due to the check above
             search_text = f"{src.lower()} {alt} {class_name}"
             
             # Check if image is likely a biller/provider logo
@@ -163,8 +164,17 @@ class PaytmBillerImageExtractor:
                 logger.error(f"Invalid URL scheme: {parsed_url.scheme}")
                 return None
             
-            # Warn about non-paytm domains (optional security check)
-            if 'paytm.com' not in parsed_url.netloc.lower() and 'paytmimages.com' not in parsed_url.netloc.lower():
+            # Validate domain to prevent domain spoofing attacks
+            # Check if domain is paytm.com or a subdomain of paytm.com
+            hostname = parsed_url.netloc.lower()
+            is_paytm_domain = (
+                hostname == 'paytm.com' or 
+                hostname.endswith('.paytm.com') or
+                hostname == 'paytmimages.com' or
+                hostname.endswith('.paytmimages.com')
+            )
+            
+            if not is_paytm_domain:
                 logger.warning(f"Downloading from external domain: {parsed_url.netloc}")
             
             # Parse URL to get filename
