@@ -28,19 +28,25 @@ logger = logging.getLogger(__name__)
 class PaytmBillerImageExtractor:
     """Extract biller images from Paytm electricity bill payment page."""
     
-    def __init__(self, url, output_dir='biller_images'):
+    def __init__(self, url, output_dir='biller_images', user_agent=None):
         """
         Initialize the extractor.
         
         Args:
             url: URL of the Paytm electricity bill payment page
             output_dir: Directory to save downloaded images
+            user_agent: Custom user agent string (optional)
         """
         self.url = url
         self.output_dir = output_dir
         self.session = requests.Session()
+        
+        # Allow custom user agent or use a generic one
+        if user_agent is None:
+            user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': user_agent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -122,10 +128,10 @@ class PaytmBillerImageExtractor:
             if not src:
                 continue
             
-            # Pre-compute the combined search string
+            # Pre-compute the combined search string with separators to avoid false matches
             alt = img.get('alt', '').lower()
             class_name = ' '.join(img.get('class', [])).lower()
-            search_text = src.lower() + alt + class_name
+            search_text = f"{src.lower()} {alt} {class_name}"
             
             # Check if image is likely a biller/provider logo
             if any(keyword in search_text for keyword in keywords):
@@ -151,23 +157,53 @@ class PaytmBillerImageExtractor:
             str: Path to the downloaded image or None if failed
         """
         try:
-            # Parse URL to get filename
+            # Validate URL to prevent SSRF attacks
             parsed_url = urlparse(image_url)
+            if parsed_url.scheme not in ['http', 'https']:
+                logger.error(f"Invalid URL scheme: {parsed_url.scheme}")
+                return None
+            
+            # Warn about non-paytm domains (optional security check)
+            if 'paytm.com' not in parsed_url.netloc.lower() and 'paytmimages.com' not in parsed_url.netloc.lower():
+                logger.warning(f"Downloading from external domain: {parsed_url.netloc}")
+            
+            # Parse URL to get filename
             original_filename = os.path.basename(parsed_url.path)
             
             # Get file extension
-            ext = os.path.splitext(original_filename)[1]
-            if not ext or ext.lower() not in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']:
-                ext = '.jpg'  # Default extension
+            ext = os.path.splitext(original_filename)[1].lower()
+            if not ext or ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']:
+                # Try to detect from content-type later, use .bin as temporary extension
+                ext = '.bin'
             
             # Create filename
             filename = f"biller_{index:03d}{ext}"
             filepath = os.path.join(self.output_dir, filename)
             
-            # Download image
+            # Download image with SSL verification
             logger.info(f"Downloading image {index}: {image_url}")
-            response = self.session.get(image_url, timeout=30, stream=True)
+            response = self.session.get(image_url, timeout=30, stream=True, verify=True)
             response.raise_for_status()
+            
+            # Try to determine actual format from content-type if extension was unknown
+            if ext == '.bin':
+                content_type = response.headers.get('content-type', '').lower()
+                if 'jpeg' in content_type or 'jpg' in content_type:
+                    ext = '.jpg'
+                elif 'png' in content_type:
+                    ext = '.png'
+                elif 'gif' in content_type:
+                    ext = '.gif'
+                elif 'webp' in content_type:
+                    ext = '.webp'
+                elif 'svg' in content_type:
+                    ext = '.svg'
+                else:
+                    ext = '.unknown'
+                
+                # Update filename with detected extension
+                filename = f"biller_{index:03d}{ext}"
+                filepath = os.path.join(self.output_dir, filename)
             
             # Save image
             with open(filepath, 'wb') as f:

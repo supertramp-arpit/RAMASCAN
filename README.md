@@ -119,6 +119,17 @@ The script provides detailed logging output:
 - ERROR: Failed operations with error details
 - DEBUG: Detailed information about found images (when logging level is set to DEBUG)
 
+## Security
+
+The script includes several security measures:
+
+- **SSL/TLS Verification**: All HTTPS connections verify SSL certificates by default
+- **URL Validation**: Image URLs are validated to prevent SSRF attacks (only http/https schemes allowed)
+- **Domain Warnings**: Logs warnings when downloading from external domains
+- **Content-Type Detection**: Determines actual file format from HTTP headers to prevent file type confusion
+- **Safe File Handling**: Uses proper path construction to prevent directory traversal
+- **Error Isolation**: Failed downloads don't crash the entire extraction process
+
 ## Notes
 
 - The script is respectful to the server with a 0.5-second delay between image downloads
