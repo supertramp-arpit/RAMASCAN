@@ -43,6 +43,14 @@ pip install requests beautifulsoup4 lxml
 
 ## Usage
 
+### Quick Start
+
+Run the main script to extract images from Paytm:
+
+```bash
+python extract_biller_images.py
+```
+
 ### Demo Mode (Test the functionality)
 
 Run the demo script to see how the extraction works with sample HTML:
@@ -53,18 +61,21 @@ python demo_extractor.py
 
 This will demonstrate the image extraction logic without requiring access to the actual Paytm website.
 
+### Examples
+
+See various usage examples:
+
+```bash
+python examples.py
+```
+
+This shows code examples for:
+- Basic usage
+- Custom output directory
+- Fetch and parse only (without downloading)
+- Downloading specific images
+
 ### Production Mode (Extract from Paytm)
-
-Run the main script:
-
-```bash
-python extract_biller_images.py
-```
-
-Or if made executable:
-```bash
-./extract_biller_images.py
-```
 
 The script will:
 1. Fetch the Paytm electricity bill payment page
