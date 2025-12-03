@@ -82,7 +82,8 @@ class PaytmBillerImageExtractor:
         logger.info("Parsing HTML to extract image URLs")
         soup = BeautifulSoup(html_content, 'lxml')
         
-        image_urls = []
+        # Use a set for O(1) lookup performance
+        image_urls_set = set()
         
         # Strategy 1: Find images in common biller container patterns
         # Look for common class names and patterns used for biller icons
@@ -109,25 +110,32 @@ class PaytmBillerImageExtractor:
                 src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
                 if src:
                     full_url = urljoin(self.url, src)
-                    if full_url not in image_urls:
-                        image_urls.append(full_url)
+                    if full_url not in image_urls_set:
+                        image_urls_set.add(full_url)
                         logger.debug(f"Found image: {full_url}")
         
         # Strategy 2: Find all images and filter by likely biller image patterns
+        keywords = ['biller', 'electricity', 'provider', 'operator', 'logo', 'icon']
         all_images = soup.find_all('img')
         for img in all_images:
             src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
+            if not src:
+                continue
+            
+            # Pre-compute the combined search string
             alt = img.get('alt', '').lower()
             class_name = ' '.join(img.get('class', [])).lower()
+            search_text = src.lower() + alt + class_name
             
             # Check if image is likely a biller/provider logo
-            if src and any(keyword in (src.lower() + alt + class_name) for keyword in 
-                          ['biller', 'electricity', 'provider', 'operator', 'logo', 'icon']):
+            if any(keyword in search_text for keyword in keywords):
                 full_url = urljoin(self.url, src)
-                if full_url not in image_urls:
-                    image_urls.append(full_url)
+                if full_url not in image_urls_set:
+                    image_urls_set.add(full_url)
                     logger.debug(f"Found image (pattern match): {full_url}")
         
+        # Convert set to list for return
+        image_urls = list(image_urls_set)
         logger.info(f"Found {len(image_urls)} unique image URLs")
         return image_urls
     
